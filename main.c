@@ -40,6 +40,9 @@ int main(int argc, char **argv)
         ++n;
     }
 
+    if (!cstr_endswith(deskfile, ".desktop", true))
+        cstr_append(deskfile, ".desktop");
+
     app_desktop_edit(app, c_str(deskfile), action);
 
     app_cleanup(app);
