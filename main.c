@@ -20,14 +20,26 @@ int main(int argc, char **argv)
     {
         const gchar *part = argv[n];
 
+        if (strcmp(part, "-h") == 0)
+        {
+            if (++n >= argc)
+                return _print_usage();
+
+            action = DESK_HIDE;
+            cstr_copy(deskfile, argv[n]);
+        }
+        if (strcmp(part, "-s") == 0)
+        {
+            if (++n >= argc)
+                return _print_usage();
+
+            action = DESK_SHOW;
+            cstr_copy(deskfile, argv[n]);
+        }
         if (strcmp(part, "-t") == 0)
         {
             if (++n >= argc)
-            {
-                //print("n    : %d", n);
-                //print("argc : %d", argc);
                 return _print_usage();
-            }
 
             action = DESK_TOGGLE;
             cstr_copy(deskfile, argv[n]);
