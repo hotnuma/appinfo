@@ -6,6 +6,8 @@
 #include <print.h>
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <gio/gdesktopappinfo.h>
 
 static Application _app_global;
 
@@ -13,6 +15,11 @@ static bool _app_get_syspath(Application *app, const gchar *id);
 static bool _app_get_userpath(Application *app, const gchar *id);
 static void _app_write_showin(Application *app, CFile *file,
                               const gchar *id, AppAction action);
+
+static gint _utf8_cmp(gconstpointer a, gconstpointer b);
+static gboolean _appinfo_show(GAppInfo *info);
+
+static void _appinfo_print(GAppInfo *info);
 
 Application* app_init()
 {
@@ -76,8 +83,14 @@ void app_cleanup(Application *app)
 
 bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
 {
-    if (!app->current_desktop)
+    if (!id || !app->current_desktop)
         return false;
+
+    CStringAuto *deskfile = cstr_new_size(32);
+    cstr_copy(deskfile, id);
+
+    if (!cstr_endswith(deskfile, ".desktop", true))
+        cstr_append(deskfile, ".desktop");
 
     const gchar *srcpath = NULL;
     const gchar *destpath = NULL;
@@ -197,6 +210,75 @@ static void _app_write_showin(Application *app, CFile *file,
     }
 
     cfile_write(file, "\n");
+}
+
+void appinfo_list(AppAction action)
+{
+    GList *all = g_app_info_get_all();
+    all = g_list_sort(all, _utf8_cmp);
+
+    if (action == DESK_LISTALL)
+    {
+        for (GList *lp = all; lp; lp = lp->next)
+        {
+            GAppInfo *info = G_APP_INFO(lp->data);
+
+            if (!_appinfo_show(info))
+                _appinfo_print(info);
+        }
+    }
+
+    for (GList *lp = all; lp; lp = lp->next)
+    {
+        GAppInfo *info = G_APP_INFO(lp->data);
+
+        if (_appinfo_show(info))
+            _appinfo_print(info);
+    }
+
+    g_list_free_full(all, g_object_unref);
+}
+
+static gint _utf8_cmp(gconstpointer a, gconstpointer b)
+{
+    gchar *casefold_a = g_utf8_casefold(g_app_info_get_name(G_APP_INFO(a)), -1);
+    gchar *casefold_b = g_utf8_casefold(g_app_info_get_name(G_APP_INFO(b)), -1);
+
+    gint result = g_utf8_collate(casefold_a, casefold_b);
+
+    g_free (casefold_a);
+    g_free (casefold_b);
+
+    return result;
+}
+
+static gboolean _appinfo_show(GAppInfo *info)
+{
+    g_return_val_if_fail(G_IS_APP_INFO(info), FALSE);
+
+    if (G_IS_DESKTOP_APP_INFO(info))
+        return g_desktop_app_info_get_show_in(G_DESKTOP_APP_INFO(info), NULL);
+
+    return TRUE;
+}
+
+static void _appinfo_print(GAppInfo *info)
+{
+    const char *tmp;
+
+    tmp = g_app_info_get_name(info);
+
+    if (tmp)
+        printf("%s", g_app_info_get_name(info));
+    else
+        printf("Unknown");
+
+    if (tmp)
+        printf("\t%s", g_app_info_get_id(info));
+    else
+        printf("\tUnknown");
+
+    printf("\n");
 }
 
 

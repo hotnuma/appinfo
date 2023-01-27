@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     Application *app = app_init();
 
     AppAction action = DESK_UNDEFINED;
-    CStringAuto *deskfile = cstr_new_size(32);
+    const char *deskfile = NULL;
 
     int n = 1;
     while (n < argc)
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
                 return _print_usage();
 
             action = DESK_HIDE;
-            cstr_copy(deskfile, argv[n]);
+            deskfile = argv[n];
         }
         else if (strcmp(part, "-s") == 0)
         {
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
                 return _print_usage();
 
             action = DESK_SHOW;
-            cstr_copy(deskfile, argv[n]);
+            deskfile = argv[n];
         }
         else if (strcmp(part, "-t") == 0)
         {
@@ -42,7 +42,11 @@ int main(int argc, char **argv)
                 return _print_usage();
 
             action = DESK_TOGGLE;
-            cstr_copy(deskfile, argv[n]);
+            deskfile = argv[n];
+        }
+        else if (strcmp(part, "-a") == 0)
+        {
+            action = DESK_LISTALL;
         }
         else
         {
@@ -52,10 +56,11 @@ int main(int argc, char **argv)
         ++n;
     }
 
-    if (!cstr_endswith(deskfile, ".desktop", true))
-        cstr_append(deskfile, ".desktop");
+    if (action == DESK_HIDE || action == DESK_SHOW || action == DESK_TOGGLE)
+        app_desktop_edit(app, deskfile, action);
 
-    app_desktop_edit(app, c_str(deskfile), action);
+    else if (action == DESK_LISTALL || action == DESK_LISTVISIBLE)
+        appinfo_list(action);
 
     app_cleanup(app);
 
