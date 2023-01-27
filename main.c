@@ -4,7 +4,7 @@
 
 static int _print_usage()
 {
-    print("usage : appinfo -t yelp.desktop");
+    print("*** usage : appinfo -t yelp.desktop");
     return 1;
 }
 
@@ -12,8 +12,8 @@ int main(int argc, char **argv)
 {
     Application *app = app_init();
 
-    CStringAuto *deskfile = cstr_new_size(32);
     AppAction action = DESK_UNDEFINED;
+    CStringAuto *deskfile = cstr_new_size(32);
 
     int n = 1;
     while (n < argc)
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
             action = DESK_HIDE;
             cstr_copy(deskfile, argv[n]);
         }
-        if (strcmp(part, "-s") == 0)
+        else if (strcmp(part, "-s") == 0)
         {
             if (++n >= argc)
                 return _print_usage();
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
             action = DESK_SHOW;
             cstr_copy(deskfile, argv[n]);
         }
-        if (strcmp(part, "-t") == 0)
+        else if (strcmp(part, "-t") == 0)
         {
             if (++n >= argc)
                 return _print_usage();

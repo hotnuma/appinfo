@@ -1,4 +1,4 @@
-#include "application.h"
+﻿#include "application.h"
 
 #include <cfile.h>
 #include <libstr.h>
@@ -8,6 +8,11 @@
 #include <stdbool.h>
 
 static Application _app_global;
+
+static bool _app_get_syspath(Application *app, const gchar *id);
+static bool _app_get_userpath(Application *app, const gchar *id);
+static void _app_write_showin(Application *app, CFile *file,
+                              const gchar *id, AppAction action);
 
 Application* app_init()
 {
@@ -69,50 +74,18 @@ void app_cleanup(Application *app)
     app->inlist = NULL;
 }
 
-bool app_get_syspath(Application *app, const gchar *id)
-{
-    CString *srcpath = app->syspath;
-
-    for (GList *lp = app->sysdirs; lp; lp = lp->next)
-    {
-        const gchar *dir = (const gchar*) lp->data;
-
-        path_join(srcpath, dir, id);
-
-        if (file_exists(c_str(srcpath)))
-            return true;
-    }
-
-    cstr_clear(srcpath);
-
-    return false;
-}
-
-bool app_get_userpath(Application *app, const gchar *id)
-{
-    CString *userpath = app->userpath;
-
-    path_join(userpath, app->userdir, id);
-
-    if (file_exists(c_str(userpath)))
-        return true;
-
-    return false;
-}
-
 bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
 {
     if (!app->current_desktop)
         return false;
 
-    const gchar *currdesktop = app->current_desktop;
     const gchar *srcpath = NULL;
     const gchar *destpath = NULL;
 
-    if (!app_get_syspath(app, id))
+    if (!_app_get_syspath(app, id))
         return false;
 
-    if (app_get_userpath(app, id))
+    if (_app_get_userpath(app, id))
     {
         srcpath = c_str(app->userpath);
         destpath = srcpath;
@@ -122,9 +95,6 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
         srcpath = c_str(app->syspath);
         destpath = c_str(app->userpath);
     }
-
-    print(srcpath);
-    print(destpath);
 
     CFileAuto *file = cfile_new();
     if (!cfile_read(file, srcpath))
@@ -143,41 +113,7 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
 
         if (strncmp(result, "OnlyShowIn=", 11) == 0)
         {
-            result += 11;
-
-            CStringList *parts = app->inlist;
-
-            cstrlist_split(parts, result, ";", false, true);
-
-            cfile_write(file, "OnlyShowIn=");
-
-            bool is_visible = false;
-
-            gint size = cstrlist_size(parts);
-            for (gint i = 0; i < size; ++i)
-            {
-                const gchar *part = c_str(cstrlist_at(parts, i));
-
-                if (strcmp(part, currdesktop) == 0)
-                {
-                    is_visible = true;
-                    continue;
-                }
-
-                print(part);
-
-                cfile_write(file, part);
-                cfile_write(file, ";");
-            }
-
-            if (show == DESK_SHOW || (!is_visible && show == DESK_TOGGLE))
-            {
-                cfile_write(file, currdesktop);
-                cfile_write(file, ";");
-            }
-
-            cfile_write(file, "\n");
-
+            cstrlist_split(app->inlist, result + 11, ";", false, true);
             continue;
         }
 
@@ -185,8 +121,82 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
         cfile_write(file, "\n");
     }
 
+    _app_write_showin(app, file, id, show);
+
     return true;
 }
 
+static bool _app_get_syspath(Application *app, const gchar *id)
+{
+    CString *srcpath = app->syspath;
+
+    for (GList *lp = app->sysdirs; lp; lp = lp->next)
+    {
+        const gchar *dir = (const gchar*) lp->data;
+
+        path_join(srcpath, dir, id);
+
+        if (file_exists(c_str(srcpath)))
+            return true;
+    }
+
+    cstr_clear(srcpath);
+
+    return false;
+}
+
+static bool _app_get_userpath(Application *app, const gchar *id)
+{
+    CString *userpath = app->userpath;
+
+    path_join(userpath, app->userdir, id);
+
+    if (file_exists(c_str(userpath)))
+        return true;
+
+    return false;
+}
+
+static void _app_write_showin(Application *app, CFile *file,
+                              const gchar *id, AppAction action)
+{
+    const gchar *currdesktop = app->current_desktop;
+
+    cfile_write(file, "OnlyShowIn=");
+
+    CStringList *parts = app->inlist;
+    bool is_visible = false;
+
+    gint size = cstrlist_size(parts);
+    for (gint i = 0; i < size; ++i)
+    {
+        const gchar *part = c_str(cstrlist_at(parts, i));
+
+        if (strcmp(part, currdesktop) == 0)
+        {
+            is_visible = true;
+            continue;
+        }
+
+        print(part);
+
+        cfile_write(file, part);
+        cfile_write(file, ";");
+    }
+
+    if (action == DESK_SHOW || (!is_visible && action == DESK_TOGGLE))
+    {
+        print("show \"%s\"", id);
+
+        cfile_write(file, currdesktop);
+        cfile_write(file, ";");
+    }
+    else
+    {
+        print("hide \"%s\"", id);
+    }
+
+    cfile_write(file, "\n");
+}
 
 
