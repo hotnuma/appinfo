@@ -86,6 +86,8 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
     if (!id || !app->current_desktop)
         return false;
 
+    //print(id);
+
     CStringAuto *deskfile = cstr_new_size(32);
     cstr_copy(deskfile, id);
 
@@ -95,10 +97,10 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
     const gchar *srcpath = NULL;
     const gchar *destpath = NULL;
 
-    if (!_app_get_syspath(app, id))
+    if (!_app_get_syspath(app, c_str(deskfile)))
         return false;
 
-    if (_app_get_userpath(app, id))
+    if (_app_get_userpath(app, c_str(deskfile)))
     {
         srcpath = c_str(app->userpath);
         destpath = srcpath;
@@ -273,10 +275,19 @@ static void _appinfo_print(GAppInfo *info)
     else
         printf("Unknown");
 
+    CStringAuto *result = cstr_new_size(32);
+
     if (tmp)
-        printf("\t%s", g_app_info_get_id(info));
+    {
+        cstr_copy(result, g_app_info_get_id(info));
+        path_strip_ext(result, false);
+
+        printf("\t%s", c_str(result));
+    }
     else
+    {
         printf("\tUnknown");
+    }
 
     printf("\n");
 }
