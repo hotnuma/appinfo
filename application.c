@@ -254,14 +254,16 @@ static gint _utf8_cmp(gconstpointer a, gconstpointer b)
     return result;
 }
 
-static gboolean _appinfo_show(GAppInfo *info)
+gboolean _appinfo_show(GAppInfo *info)
 {
-    g_return_val_if_fail(G_IS_APP_INFO(info), FALSE);
+    g_return_val_if_fail(G_IS_DESKTOP_APP_INFO(info), FALSE);
 
-    if (G_IS_DESKTOP_APP_INFO(info))
-        return g_desktop_app_info_get_show_in(G_DESKTOP_APP_INFO(info), NULL);
+    GDesktopAppInfo *deskinfo = G_DESKTOP_APP_INFO(info);
 
-    return TRUE;
+    if (g_desktop_app_info_get_nodisplay(deskinfo))
+        return false;
+
+    return g_desktop_app_info_get_show_in(deskinfo, NULL);
 }
 
 static void _appinfo_print(GAppInfo *info)
