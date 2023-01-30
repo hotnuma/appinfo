@@ -78,6 +78,20 @@ int main(int argc, char **argv)
 
             return _app_exit(app, false, EXIT_SUCCESS);
         }
+        else if (strcmp(part, "-u") == 0)
+        {
+            if (++n >= argc)
+                return _app_exit(app, true, EXIT_FAILURE);
+
+            _set_deskfile(deskfile, argv[n]);
+
+            if (!app_get_userpath(app, c_str(deskfile)))
+                return _app_exit(app, false, EXIT_FAILURE);
+
+            print(c_str(app->userpath));
+
+            return _app_exit(app, false, EXIT_SUCCESS);
+        }
         else
         {
             return _app_exit(app, true, EXIT_FAILURE);
