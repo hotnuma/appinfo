@@ -11,8 +11,6 @@
 
 static Application _app_global;
 
-static bool _app_get_syspath(Application *app, const gchar *id);
-static bool _app_get_userpath(Application *app, const gchar *id);
 static void _app_write_showin(Application *app, CFile *file,
                               const gchar *id, AppAction action);
 
@@ -81,26 +79,18 @@ void app_cleanup(Application *app)
     app->inlist = NULL;
 }
 
-bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
+bool app_desktop_edit(Application *app, const gchar *deskfile, AppAction show)
 {
-    if (!id || !app->current_desktop)
+    if (!deskfile || !app->current_desktop)
         return false;
-
-    //print(id);
-
-    CStringAuto *deskfile = cstr_new_size(32);
-    cstr_copy(deskfile, id);
-
-    if (!cstr_endswith(deskfile, ".desktop", true))
-        cstr_append(deskfile, ".desktop");
 
     const gchar *srcpath = NULL;
     const gchar *destpath = NULL;
 
-    if (!_app_get_syspath(app, c_str(deskfile)))
+    if (!app_get_syspath(app, deskfile))
         return false;
 
-    if (_app_get_userpath(app, c_str(deskfile)))
+    if (app_get_userpath(app, deskfile))
     {
         srcpath = c_str(app->userpath);
         destpath = srcpath;
@@ -136,12 +126,12 @@ bool app_desktop_edit(Application *app, const gchar *id, AppAction show)
         cfile_write(file, "\n");
     }
 
-    _app_write_showin(app, file, id, show);
+    _app_write_showin(app, file, deskfile, show);
 
     return true;
 }
 
-static bool _app_get_syspath(Application *app, const gchar *id)
+bool app_get_syspath(Application *app, const gchar *id)
 {
     CString *srcpath = app->syspath;
 
@@ -160,7 +150,7 @@ static bool _app_get_syspath(Application *app, const gchar *id)
     return false;
 }
 
-static bool _app_get_userpath(Application *app, const gchar *id)
+bool app_get_userpath(Application *app, const gchar *id)
 {
     CString *userpath = app->userpath;
 
@@ -214,7 +204,7 @@ static void _app_write_showin(Application *app, CFile *file,
     cfile_write(file, "\n");
 }
 
-void appinfo_list(AppAction action)
+void app_makelist(AppAction action)
 {
     GList *all = g_app_info_get_all();
     all = g_list_sort(all, _utf8_cmp);

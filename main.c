@@ -2,10 +2,21 @@
 #include <locale.h>
 #include <print.h>
 
-static int _print_usage()
+static int _app_exit(Application *app, bool usage, int ret)
 {
-    print("*** usage : appinfo -t yelp.desktop");
-    return 1;
+    if (usage)
+        print("*** usage : appinfo -t yelp.desktop");
+
+    app_cleanup(app);
+    return ret;
+}
+
+static void _set_deskfile(CString *result, const gchar *id)
+{
+    cstr_copy(result, id);
+
+    if (!cstr_endswith(result, ".desktop", true))
+        cstr_append(result, ".desktop");
 }
 
 int main(int argc, char **argv)
@@ -17,7 +28,8 @@ int main(int argc, char **argv)
     Application *app = app_init();
 
     AppAction action = DESK_UNDEFINED;
-    const char *deskfile = NULL;
+
+    CStringAuto *deskfile = cstr_new_size(32);
 
     int n = 1;
     while (n < argc)
@@ -27,48 +39,60 @@ int main(int argc, char **argv)
         if (strcmp(part, "-h") == 0)
         {
             if (++n >= argc)
-                return _print_usage();
+                return _app_exit(app, true, EXIT_FAILURE);
 
             action = DESK_HIDE;
-            deskfile = argv[n];
+            _set_deskfile(deskfile, argv[n]);
         }
         else if (strcmp(part, "-s") == 0)
         {
             if (++n >= argc)
-                return _print_usage();
+                return _app_exit(app, true, EXIT_FAILURE);
 
             action = DESK_SHOW;
-            deskfile = argv[n];
+            _set_deskfile(deskfile, argv[n]);
         }
         else if (strcmp(part, "-t") == 0)
         {
             if (++n >= argc)
-                return _print_usage();
+                return _app_exit(app, true, EXIT_FAILURE);
 
             action = DESK_TOGGLE;
-            deskfile = argv[n];
+            _set_deskfile(deskfile, argv[n]);
         }
         else if (strcmp(part, "-a") == 0)
         {
             action = DESK_LISTALL;
         }
+        else if (strcmp(part, "-f") == 0)
+        {
+            if (++n >= argc)
+                return _app_exit(app, true, EXIT_FAILURE);
+
+            _set_deskfile(deskfile, argv[n]);
+
+            if (!app_get_syspath(app, c_str(deskfile)))
+                return _app_exit(app, false, EXIT_FAILURE);
+
+            print(c_str(app->syspath));
+
+            return _app_exit(app, false, EXIT_SUCCESS);
+        }
         else
         {
-            return _print_usage();
+            return _app_exit(app, true, EXIT_FAILURE);
         }
 
         ++n;
     }
 
     if (action == DESK_HIDE || action == DESK_SHOW || action == DESK_TOGGLE)
-        app_desktop_edit(app, deskfile, action);
+        app_desktop_edit(app, c_str(deskfile), action);
 
     else if (action == DESK_LISTALL || action == DESK_LISTVISIBLE)
-        appinfo_list(action);
+        app_makelist(action);
 
-    app_cleanup(app);
-
-    return 0;
+    return _app_exit(app, false, EXIT_SUCCESS);
 }
 
 

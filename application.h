@@ -33,7 +33,10 @@ Application* app_init();
 void app_cleanup(Application *app);
 
 bool app_desktop_edit(Application *app, const gchar *id, AppAction action);
-void appinfo_list(AppAction action);
+bool app_get_syspath(Application *app, const gchar *id);
+bool app_get_userpath(Application *app, const gchar *id);
+
+void app_makelist(AppAction action);
 
 #endif // APPLICATION_H
 
