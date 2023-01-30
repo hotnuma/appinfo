@@ -1,5 +1,5 @@
 #include "application.h"
-
+#include <locale.h>
 #include <print.h>
 
 static int _print_usage()
@@ -10,6 +10,10 @@ static int _print_usage()
 
 int main(int argc, char **argv)
 {
+    const char *lang = getenv("LANG");
+    if (lang)
+        setlocale(LC_ALL, lang);
+
     Application *app = app_init();
 
     AppAction action = DESK_UNDEFINED;
