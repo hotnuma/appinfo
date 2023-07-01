@@ -116,12 +116,12 @@ bool app_desktop_edit(Application *app, const gchar *deskfile, AppAction show)
     {
         result[length] = '\0';
 
-        if (str_startswith(result, "OnlyShowIn="))
+        if (str_startswith(result, "OnlyShowIn=", true))
         {
             cstrlist_split(app->inlist, result + 11, ";", false, true);
             continue;
         }
-        else if (str_startswith(result, "NoDisplay="))
+        else if (str_startswith(result, "NoDisplay=", true))
         {
             continue;
         }

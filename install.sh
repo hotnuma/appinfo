@@ -8,7 +8,7 @@ if [[ -d $dest ]]; then
 fi
 
 
-meson build -Dbuildtype=plain
+meson setup build -Dbuildtype=plain
 ninja -C build
 sudo ninja -C build install
 
